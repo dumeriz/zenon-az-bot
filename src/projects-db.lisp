@@ -4,7 +4,11 @@
   (:import-from :zaz-bot-projects
 		:project-id
 		:changed)
-  (:export :try-restore :make-backup :insert :get-project))
+  (:export :try-restore
+	   :make-backup
+	   :insert
+	   :project-ids
+	   :get-project))
 
 (in-package :zaz-bot-projects-db)
 
@@ -29,6 +33,10 @@
   "Retrieves the project stored under `ID' from the local db."
   (gethash id *projects*))
 
+(defun project-ids ()
+  "Returns the ids of all known projects."
+  (alexandria:hash-table-keys *projects*))
+  
 (defun get-project-from-db (project)
   "Extracts the entry for `PROJECT' from the local db."
   (gethash (project-id project) *projects*))

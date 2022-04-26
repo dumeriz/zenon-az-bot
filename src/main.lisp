@@ -11,12 +11,16 @@
 
 (defun get-current-projects (endpoint)
   "Retrieves the current az-projects from `ENDPOINT' and translates them into internal types."
-  (zaz/projects:import-api-projects
-   (zaz/api:current-projects endpoint)))
+  (let ((projects
+	 (ignore-errors
+	   (zaz/api:current-projects endpoint))))
+    (when projects
+      (zaz/projects:import-api-projects projects))))
 
 (defun update-local-db (projects)
   "Pushes `PROJECTS' into the local db, returning a change set."
-  (zaz/db:insert projects))
+  (when projects
+    (zaz/db:insert projects)))
 
 (defun update-from (endpoint)
   "Requests the current accelerator projects and generates `PROJECT' instances.
@@ -39,6 +43,10 @@ created via `PROJECT-UPDATE-FOR-*', depending on the update type."
       (loop for u in updates do (zaz/bot:send-to-chat chat-id u))
       (loop for u in updates do (zaz/bot:send-to-channel u))))
 
+(defun maybe-send-pillar-stats (endpoint)
+  (when-let (update (zaz/p-stats:get-current endpoint (zaz/db:project-ids)))
+    (zaz/bot:send-to-channel (zaz/p-stats:to-html update))))
+
 (defun run-update (endpoint &optional chat-id)
   "Initiates a backup and update of the local db from a zenon node.
 The node must have the 'embedded.accelerator.getAll' api function enabled
@@ -47,7 +55,8 @@ delivered through configured telegram bot in the telegram chat with `CHAT-ID'.
 Else, updates go through telegram-send; see the `SEND-*' methods in `ZAZ/BOT'."
   (let ((update (update-from endpoint)))
     (zaz/db:make-backup)
-    (send-updates (mapcar #'zaz/cls:to-html update) chat-id)))
+    (send-updates (mapcar #'zaz/cls:to-html update) chat-id)
+    (maybe-send-pillar-stats endpoint)))
 
 ;; Integrated bot doesn't work with channels unfortunately
 (defun init (token chat-id endpoint)

@@ -66,7 +66,6 @@
   (:documentation "Creates a html-presentation of PROJECT.")
   (:method ((p new-project))
     (cl-who:with-html-output-to-string (s)
-      ; stupid api not accepting line break control characters or entities
       (:b "New: " (cl-who:str (name p)))"
 "
       (:i (cl-who:str (description p)))"
